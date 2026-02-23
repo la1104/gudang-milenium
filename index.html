@@ -290,5 +290,23 @@ ak+="<tr><td>"+b+"</td><td>"+depan+"</td><td>"+belakang+"</td><td>"+total+"</td>
 
 reloadSelect(); render();
 </script>
+ <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<script>
+var firebaseConfig = {
+  apiKey: "AIzaSyAysoVyrYi6DOH5-yXqUhEN_UHWLDa7hiw",
+  authDomain: "gudang-milenium-c1597.firebaseapp.com",
+  databaseURL: "https://stokgudangmilenium-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "gudang-milenium-c1597",
+  storageBucket: "gudang-milenium-c1597.appspot.com",
+  messagingSenderId: "404658585029",
+  appId: "1:404658585029:web:47d4f140590ca64cd29fac"
+};
+
+firebase.initializeApp(firebaseConfig);
+var database = firebase.database();
+window.db = database.ref("/");
+</script>
 </body>
 </html>
