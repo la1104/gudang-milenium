@@ -82,11 +82,12 @@ var mList = JSON.parse(localStorage.getItem("mList14")||'[]');
 var kList = JSON.parse(localStorage.getItem("kList14")||'[]');
 
 function save(){
- localStorage.setItem("items14",JSON.stringify(ITEMS));
- localStorage.setItem("awal14",JSON.stringify(awal));
- localStorage.setItem("mList14",JSON.stringify(mList));
- localStorage.setItem("kList14",JSON.stringify(kList));
-}
+ window.db.set({
+  items14: ITEMS,
+  awal14: awal,
+  mList14: mList,
+  kList14: kList
+});
 
 function fmtYY(iso){
  if(!iso) return "";
