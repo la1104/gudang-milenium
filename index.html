@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gudang Milenium v18 (Revisi)</title>
+<style>
+body{font-family:Arial;background:#f4f6f9;padding:14px}
+.section{background:#fff;padding:12px;margin-bottom:14px;border-radius:10px}
+input,select,button{padding:8px;margin:5px}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px;table-layout:auto;min-width:600px}
+th,td{border:1px solid #ccc;padding:8px;text-align:center;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<h2>GUDANG MILENIUM</h2>
+
+<div class="section">
+<b>Tambah Nama Barang</b><br>
+<input id="new_item" placeholder="Nama Barang Baru">
+<button onclick="addItem()">Tambah</button>
+</div>
+
+<div class="section">
+<b>Stok Awal</b><br>
+<select id="a_g"><option>Depan</option><option>Belakang</option></select>
+<select id="a_n"></select>
+<input id="a_j" type="number" placeholder="Jumlah">
+<button onclick="setAwal()">Set</button>
+</div>
+
+<div class="section">
+<b>Barang Masuk</b><br>
+<select id="m_g"><option>Depan</option><option>Belakang</option></select>
+<select id="m_n"></select><br>
+<input id="m_t" type="date">
+<input id="m_j" type="number" placeholder="Jumlah">
+<input id="m_u" placeholder="Customer">
+<button onclick="masuk()">Tambah</button>
+</div>
+
+<div class="section">
+<b>Barang Keluar</b><br>
+<select id="k_g"><option>Depan</option><option>Belakang</option></select>
+<select id="k_n"></select><br>
+<input id="k_t" type="date">
+<input id="k_j" type="number" placeholder="Jumlah">
+<input id="k_u" placeholder="Customer">
+<button onclick="keluar()">Kurangi</button>
+</div>
+
+<div class="section">
+<b>STOK AWAL</b>
+<div class="table-wrap"><table id="awalTbl"></table></div>
+</div>
+
+<div class="section">
+<b>STOK AKHIR</b>
+<button onclick="downloadReport()">Download Laporan (MILE)</button>
+<div class="table-wrap"><table id="akhirTbl"></table></div>
+</div>
+
+<div class="section">
+<b>Riwayat Masuk</b>
+<div class="table-wrap"><table id="mTbl"></table></div>
+</div>
+
+<div class="section">
+<b>Riwayat Keluar</b>
+<div class="table-wrap"><table id="kTbl"></table></div>
+</div>
+
+<script>
+var ITEMS = JSON.parse(localStorage.getItem("items14")||'[]');
+if(ITEMS.length==0){
+ ITEMS=["DRN-101 16\"","DRN-101A 16\"","DRN-101C 16\"","DRN-101T 16\"","DRN-201 16\"","DRN-201N 16\"","DRN-301A 12\"","DRN-301B 12\"","A-602 16\"","SR-8899Aa","SR-8899F","SR-8899K","SR-8899O","SR-8899X","SR-8899Z","MRN-912 1,2L","DRN 3L-1,5M","DRN 3L-3M","DRN 3L-5M","DRN 4L-1,5M","DRN 4L-3M","DRN 4L-5M","DRN 5L-1,5M","DRN 5L-3M","DRN 5L-5M"];
+}
+var awal = JSON.parse(localStorage.getItem("awal14")||'{"Depan":{},"Belakang":{}}');
+var mList = JSON.parse(localStorage.getItem("mList14")||'[]');
+var kList = JSON.parse(localStorage.getItem("kList14")||'[]');
+
+function save(){
+ localStorage.setItem("items14",JSON.stringify(ITEMS));
+ localStorage.setItem("awal14",JSON.stringify(awal));
+ localStorage.setItem("mList14",JSON.stringify(mList));
+ localStorage.setItem("kList14",JSON.stringify(kList));
+}
+
+function fmtYY(iso){
+ if(!iso) return "";
+ var p=iso.split("-"); if(p.length<3) return iso;
+ return p[2]+"/"+p[1]+"/"+p[0].slice(2);
+}
+
+function reloadSelect(){
+ ["a_n","m_n","k_n"].forEach(function(id){
+  var el=document.getElementById(id); el.innerHTML="";
+  ITEMS.forEach(function(b){
+    var o=document.createElement("option"); o.text=b; o.value=b; el.add(o);
+  });
+ });
+}
+
+function sumMasuk(g,n){ var s=0; mList.forEach(d=>{if(d.g==g&&d.n==n)s+=d.j;}); return s; }
+function sumKeluar(g,n){ var s=0; kList.forEach(d=>{if(d.g==g&&d.n==n)s+=d.j;}); return s; }
+
+function addItem(){
+ var n=new_item.value; if(!n||ITEMS.includes(n)) return;
+ ITEMS.push(n); reloadSelect(); render();
+}
+
+function setAwal(){
+ var g=a_g.value,n=a_n.value,j=parseInt(a_j.value||0);
+ awal[g][n]=j; render();
+}
+
+function hapusType(b){
+ awal.Depan[b]=0;
+ awal.Belakang[b]=0;
+ mList = mList.filter(x => x.n !== b);
+ kList = kList.filter(x => x.n !== b);
+ render();
+}
+
+function masuk(){
+ var g=m_g.value,n=m_n.value,t=m_t.value,j=parseInt(m_j.value||0),u=m_u.value||"";
+ if(!t||!j) return;
+ mList.push({g:g,n:n,t:t,j:j,u:u});
+ render();
+}
+
+function keluar(){
+ var g=k_g.value,n=k_n.value,t=k_t.value,j=parseInt(k_j.value||0),u=k_u.value||"";
+ if(!t||!j) return;
+ kList.push({g:g,n:n,t:t,j:j,u:u});
+ render();
+}
+
+function delM(i){ mList.splice(i,1); render(); }
+function delK(i){ kList.splice(i,1); render(); }
+
+function hasAnyData(b){
+ return (awal.Depan[b]||0)!==0 || (awal.Belakang[b]||0)!==0 ||
+        sumMasuk("Depan",b)>0 || sumMasuk("Belakang",b)>0 ||
+        sumKeluar("Depan",b)>0 || sumKeluar("Belakang",b)>0;
+}
+
+function esc(x){
+ if(x==null) return "";
+ return String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function downloadReport(){
+ var depanRows="", belakangRows="", ketMasuk="", ketKeluar="";
+ ITEMS.forEach(function(b){
+   if(!hasAnyData(b)) return;
+   var aD=awal.Depan[b]||0, inD=sumMasuk("Depan",b), outD=sumKeluar("Depan",b);
+   var akD=aD+inD-outD;
+   var aB=awal.Belakang[b]||0, inB=sumMasuk("Belakang",b), outB=sumKeluar("Belakang",b);
+   var akB=aB+inB-outB;
+
+   depanRows += "<Row>"+
+    "<Cell><Data ss:Type='String'>"+esc(b)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+aD+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+inD+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+outD+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+(akD<0?0:akD)+"</Data></Cell>"+
+   "</Row>";
+
+   belakangRows += "<Row>"+
+    "<Cell><Data ss:Type='String'>"+esc(b)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+aB+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+inB+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+outB+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+(akB<0?0:akB)+"</Data></Cell>"+
+   "</Row>";
+ });
+
+ mList.forEach(function(d){
+  ketMasuk += "<Row>"+
+    "<Cell><Data ss:Type='String'>"+esc(fmtYY(d.t))+"</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.u)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.n)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+d.j+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>0</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.g)+"</Data></Cell>"+
+  "</Row>";
+ });
+ kList.forEach(function(d){
+  ketKeluar += "<Row>"+
+    "<Cell><Data ss:Type='String'>"+esc(fmtYY(d.t))+"</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.u)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.n)+"</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>0</Data></Cell>"+
+    "<Cell><Data ss:Type='Number'>"+d.j+"</Data></Cell>"+
+    "<Cell><Data ss:Type='String'>"+esc(d.g)+"</Data></Cell>"+
+  "</Row>";
+ });
+
+ var spacer = "<Row></Row><Row></Row><Row></Row><Row></Row>";
+
+ var xml = '<?xml version="1.0"?>'+
+'<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" '+
+'xmlns:o="urn:schemas-microsoft-com:office:office" '+
+'xmlns:x="urn:schemas-microsoft-com:office:excel" '+
+'xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">'+
+'<Styles><Style ss:ID="Bold"><Font ss:Bold="1"/></Style></Styles>'+
+
+'<Worksheet ss:Name="STOK"><Table>'+
+'<Row><Cell ss:MergeAcross="4" ss:StyleID="Bold"><Data ss:Type="String">STOK MILENIUM 2 (DEPAN)</Data></Cell></Row>'+
+'<Row></Row>'+
+'<Row>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">TYPE</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">1! STOK</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">IN</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">OUT</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">STOK AKHIR</Data></Cell>'+
+'</Row>'+depanRows+
+'<Row></Row>'+
+'<Row><Cell ss:MergeAcross="4" ss:StyleID="Bold"><Data ss:Type="String">STOK MILENIUM 2 (BELAKANG)</Data></Cell></Row>'+
+'<Row></Row>'+
+'<Row>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">TYPE</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">1! STOK</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">IN</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">OUT</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">STOK AKHIR</Data></Cell>'+
+'</Row>'+belakangRows+
+'</Table></Worksheet>'+
+
+'<Worksheet ss:Name="KET"><Table>'+
+'<Row>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">TANGGAL</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">CUSTOMER</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">TYPE</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">IN</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">OUT</Data></Cell>'+
+'<Cell ss:StyleID="Bold"><Data ss:Type="String">KET</Data></Cell>'+
+'</Row>'+ketMasuk+ spacer + ketKeluar +
+'</Table></Worksheet>'+
+'</Workbook>';
+
+ var blob = new Blob([xml], {type: "application/vnd.ms-excel"});
+ var url = URL.createObjectURL(blob);
+ var a = document.createElement("a");
+ a.href = url; a.download = "MILE_Laporan_Gudang_Milenium.xls";
+ document.body.appendChild(a); a.click();
+ document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+function render(){
+ var a="<tr><th>Barang</th><th>Depan</th><th>Belakang</th><th>Aksi</th></tr>";
+ ITEMS.forEach(function(b){
+  if(!hasAnyData(b)) return;
+  a+="<tr><td>"+b+"</td><td>"+(awal.Depan[b]||0)+"</td><td>"+(awal.Belakang[b]||0)+"</td>"+
+  "<td><button onclick=\"hapusType('"+b+"')\">Hapus</button></td></tr>";
+ });
+ awalTbl.innerHTML=a;
+
+ var ak="<tr><th>Barang</th><th>Depan</th><th>Belakang</th><th>Total</th></tr>";
+ ITEMS.forEach(function(b){
+  if(!hasAnyData(b)) return;
+  var aD=awal.Depan[b]||0, inD=sumMasuk("Depan",b), outD=sumKeluar("Depan",b);
+  var aB=awal.Belakang[b]||0, inB=sumMasuk("Belakang",b), outB=sumKeluar("Belakang",b);
+  var depan=(aD+inD-outD);
+var belakang=(aB+inB-outB);
+var total=depan+belakang;
+ak+="<tr><td>"+b+"</td><td>"+depan+"</td><td>"+belakang+"</td><td>"+total+"</td></tr>";
+ });
+ akhirTbl.innerHTML=ak;
+
+ var m="<tr><th>Tgl</th><th>Gdg</th><th>Barang</th><th>Jml</th><th>Cust</th><th>Aksi</th></tr>";
+ mList.forEach(function(d,idx){
+  m+="<tr><td>"+fmtYY(d.t)+"</td><td>"+d.g+"</td><td>"+d.n+"</td><td>"+d.j+"</td><td>"+d.u+"</td>"+
+  "<td><button onclick=\"delM("+idx+")\">Hapus</button></td></tr>";
+ });
+ mTbl.innerHTML=m;
+
+ var k="<tr><th>Tgl</th><th>Gdg</th><th>Barang</th><th>Jml</th><th>Cust</th><th>Aksi</th></tr>";
+ kList.forEach(function(d,idx){
+  k+="<tr><td>"+fmtYY(d.t)+"</td><td>"+d.g+"</td><td>"+d.n+"</td><td>"+d.j+"</td><td>"+d.u+"</td>"+
+  "<td><button onclick=\"delK("+idx+")\">Hapus</button></td></tr>";
+ });
+ kTbl.innerHTML=k;
+
+ save();
+}
+
+reloadSelect(); render();
+</script>
+</body>
+</html>
