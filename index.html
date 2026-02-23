@@ -73,10 +73,13 @@ th,td{border:1px solid #ccc;padding:8px;text-align:center;white-space:nowrap}
 </div>
 
 <script>
-var ITEMS = JSON.parse(localStorage.getItem("items14")||'[]');
-if(ITEMS.length==0){
- ITEMS=["DRN-101 16\"","DRN-101A 16\"","DRN-101C 16\"","DRN-101T 16\"","DRN-201 16\"","DRN-201N 16\"","DRN-301A 12\"","DRN-301B 12\"","A-602 16\"","SR-8899Aa","SR-8899F","SR-8899K","SR-8899O","SR-8899X","SR-8899Z","MRN-912 1,2L","DRN 3L-1,5M","DRN 3L-3M","DRN 3L-5M","DRN 4L-1,5M","DRN 4L-3M","DRN 4L-5M","DRN 5L-1,5M","DRN 5L-3M","DRN 5L-5M"];
-}
+var ITEMS = [
+"DRN-101 16\"","DRN-101A 16\"","DRN-101C 16\"","DRN-101T 16\"","DRN-201 16\"",
+"DRN-201N 16\"","DRN-301A 12\"","DRN-301B 12\"","A-602 16\"","SR-8899Aa",
+"SR-8899F","SR-8899K","SR-8899O","SR-8899X","SR-8899Z","MRN-912 1,2L",
+"DRN 3L-1,5M","DRN 3L-3M","DRN 3L-5M","DRN 4L-1,5M","DRN 4L-3M",
+"DRN 4L-5M","DRN 5L-1,5M","DRN 5L-3M","DRN 5L-5M"
+];
 var awal = JSON.parse(localStorage.getItem("awal14")||'{"Depan":{},"Belakang":{}}');
 var mList = JSON.parse(localStorage.getItem("mList14")||'[]');
 var kList = JSON.parse(localStorage.getItem("kList14")||'[]');
