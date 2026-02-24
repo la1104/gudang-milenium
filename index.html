@@ -291,17 +291,6 @@ ak+="<tr><td>"+b+"</td><td>"+depan+"</td><td>"+belakang+"</td><td>"+total+"</td>
  save();
 }
 
-window.db.on("value", function(snapshot){
-  var d = snapshot.val() || {};
-
-  ITEMS = d.items14 || ITEMS;
-  awal  = d.awal14  || awal;
-  mList = d.mList14 || [];
-  kList = d.kList14 || [];
-
-  reloadSelect();
-  render();
-});
 </script>
  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -320,6 +309,18 @@ var firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 var database = firebase.database();
 window.db = database.ref("/");
+
+ window.db.on("value", function(snapshot){
+  var d = snapshot.val() || {};
+
+  ITEMS = d.items14 || ITEMS;
+  awal  = d.awal14  || awal;
+  mList = d.mList14 || [];
+  kList = d.kList14 || [];
+
+  reloadSelect();
+  render();
+});
 </script>
 </body>
 </html>
