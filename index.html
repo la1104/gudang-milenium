@@ -85,10 +85,12 @@ var mList = JSON.parse(localStorage.getItem("mList14")||'[]');
 var kList = JSON.parse(localStorage.getItem("kList14")||'[]');
 
 function save(){
- window.db.child("items14").set(ITEMS);
- window.db.child("awal14").set(awal);
- window.db.child("mList14").set(mList);
- window.db.child("kList14").set(kList);
+ window.db.update({
+   items14: ITEMS,
+   awal14: awal,
+   mList14: mList,
+   kList14: kList
+ });
 }
 
 function fmtYY(iso){
@@ -311,15 +313,18 @@ var database = firebase.database();
 window.db = database.ref("/");
 
  window.db.on("value", function(snapshot){
-  var d = snapshot.val() || {};
+  var d = snapshot.val();
+  if(!d) return;
 
-  ITEMS = d.items14 || ITEMS;
-  awal  = d.awal14  || awal;
+  ITEMS = d.items14 || [];
+  awal  = d.awal14  || {"Depan":{},"Belakang":{}};
   mList = d.mList14 || [];
   kList = d.kList14 || [];
 
   reloadSelect();
   render();
+}, function(error){
+  console.log("Firebase read error:", error);
 });
 </script>
 </body>
